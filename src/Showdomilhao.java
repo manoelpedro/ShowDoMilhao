@@ -5,131 +5,304 @@ import java.util.Scanner;
 
 public class Showdomilhao{
 	
-	//atributos usados no main
 	static Scanner ler = new Scanner(System.in);
-	static boolean continuar = true;
-	static boolean respostaInvalida = false;
-	static String resposta;
-	
-	//atributos do jogo em si
-	static String nomeDoJogador = null;
-	static String valorAcumulado = "";//quantia em dinheiro que o jogador acumulou/ganhou
-	static int indicePerguntaSorteada = 0;
-	
-	static List<String> perguntas = new ArrayList<>();
-	static List<String> respostas = new ArrayList<>();
-	static List<String> alternativasFalsas1 = new ArrayList<>();
-	static List<String> alternativasFalsas2 = new ArrayList<>();
-	static List<String> alternativasFalsas3 = new ArrayList<>();
-	
-	static List<Integer> jaEscolhidas = new ArrayList<>();//guarda o indice das perguntas que ja sairam
-	static List<String> valoresDasPerguntas = new ArrayList<>();//valor em dinheiro de cada pergunta (o indice do valor corresponde ao indice da pergunta)
-	
-	static String a = null; 
-	static String b = null; 
-	static String c = null; 
-	static String d = null;
-	
-	static int indiceDosValoresDasPerguntas = 0; //indice do valor em dinheiro de cada pergunta
 
+	static List<List<String>> questoesFaceisCC;
+	static List<List<String>> questoesMediasCC;
+	static List<List<String>> questoesDificeisCC;
+	static List<List<String>> questoesFaceisGeral;
+	static List<List<String>> questoesMediasGeral;
+	static List<List<String>> questoesDificeisGeral;
+	static List<Integer> premios = new ArrayList<>();
+	static String categoria = "";
+	static int numeroDaRodadaAtual = 1; //rodada 1 e 2(perguntas nivel facil), rodada 3 e 4(nivel medio), 5 e 6(nivel dificil)
+	static int indiceDaPerguntaSorteada;
+	static String letraRespostaCertaAtual = "";
+	static String nomeDoJogador = null;
+	static String resposta;
+	static boolean continuar = true;
+	
+	/**
+	 * Essas tres listas recebem as questoes das listas principais(computacao ou geral);
+	 * Serao usadas para manipular as questoes que serao ou ja foram sorteadas;
+	 * As questoes que ja foram sorteadas serao removidas destas listas para evitar repeticoes.
+	 */
+	static List<List<String>> faceisAux;
+	static List<List<String>> mediasAux;
+	static List<List<String>> dificeisAux;
 	
 	public static void main(String[] args) {
-		
-		preenchePerguntas();
-		
-		exibeMenu();
+		iniciarJogo();
 		
 		do {
 			
 			sorteiaPergunta();
 			
-			exibeAlternativas();		
+			imprimePergunta();		
 			
-			recebeResposta();
+			recebeRespostaDaQuestao();//analisa se eh um caractere valido
 			
-			continuar = analisaResposta(resposta);
+			imprimeResultado();
 			
-			if(continuar == false || valorAcumulado.equals("1.000.000") ) { //se errou a resposta(continuar == false) ou ja ganhou 1 milhão (valorAcumulado = "1.000.000")
-				do {
-					resposta = ler.next();
-					
-					if(resposta.equals("n")) {
-						continuar = false;
-						respostaInvalida = false;
-					}else if(resposta.equals("s")) {
-						continuar = true;
-						respostaInvalida = false;
-					}else {
-						respostaInvalida = true;
-						System.out.print("Resposta inválida. Digite s ou n: ");
-					}
-				}while(respostaInvalida);
-			}
 			
+//			System.out.println("***********************");
+//			System.out.println("FACEIS: "  + faceisAux.size());
+//			System.out.println("MEDIAS: " + mediasAux.size());
+//			System.out.println("DIFICEIS: " + dificeisAux.size());
+//			System.out.println("RODADA ATUAL: " + numeroDaRodadaAtual);
+//			System.out.println("INDICE ALEATORIO: " + indiceDaPerguntaSorteada);
+		
 		} while(continuar);
-		
 	}
 
 	
-	private static void exibeMenu() {
-		System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-		System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$ S H O W $$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-		System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ D O $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
-		System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$ M I L H Ã O $$$$$$$$$$$$$$$$$$$$$$$$$$");
-		System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
-		System.out.print("Digite seu nome para começar: ");
+	private static void iniciarJogo() {
+		System.out.println("___________________________________________________________________");
+		System.out.println("_____________________________ S H O W _____________________________");
+		System.out.println("_______________________________ D O _______________________________");
+		System.out.println("___________________________ M I L H A O ___________________________");
+		System.out.println("___________________________________________________________________");
+		System.out.println("Teste seus conhecimentos e concorra ao premio maximo de R$ 1 milhão.\n");
+		System.out.print("Digite seu nome: ");
 		nomeDoJogador = ler.nextLine();
+		
+		preencherQuestoes(); //tem q vir antes de escolheCategorias!!!
+		escolheCategoria();
+		preencherPremios();
+		
 		System.out.println("\nBem vindo " + nomeDoJogador + "! O jogo vai começar, boa sorte! \n");
+		
+	}
+	
+	//Computacao ou Conhecimentos Gerais
+	private static void escolheCategoria() {
+		System.out.println("\nQual categoria de questões você deseja?");
+		System.out.println("1) Computação");
+		System.out.println("2) Conhecimentos Gerias");
+		System.out.print("Digite o numero da categoria: ");
+		do {
+			resposta = ler.next();
+				
+			if(!resposta.equals("1") && !resposta.equals("2"))
+				System.out.print("Categoria invalida. Digite 1 ou 2: ");
+		
+		}while(!resposta.equals("1") && !resposta.equals("2"));
+				
+		if(resposta.equals("1")) {
+			faceisAux = questoesFaceisCC;
+			mediasAux = questoesMediasCC;
+			dificeisAux = questoesDificeisCC;
+		
+		}else if(resposta.equals("2")){
+			faceisAux = questoesFaceisGeral;
+			mediasAux = questoesMediasGeral;
+			dificeisAux = questoesDificeisGeral;
+		}
+	}
+	
+	private static void preencherPremios() {
+		premios.add(1000);
+		premios.add(10000);
+		premios.add(50000);
+		premios.add(100000);
+		premios.add(500000);
+		premios.add(1000000);
 	}
 
-	public static void preenchePerguntas (){
-		perguntas.add("Quem descobriu o brasil?");
-		perguntas.add("Dois mais dois vale quanto?");
-		perguntas.add("A lua é um(a) ?");
-		perguntas.add("A Tim é uma");
-		perguntas.add("Quem é destro usa o(s) braço(s):");
-		perguntas.add("H2O é a fórmula da:");
+	public static void preencherQuestoes (){
 		
-		respostas.add("Pedro Alvares Cabral");
-		respostas.add("Quatro");
-		respostas.add("Satélite Natural");
-		respostas.add("Operadora de celular");
-		respostas.add("Direito");
-		respostas.add("Água");
+		questoesFaceisCC = new ArrayList<>();
+		questoesMediasCC = new ArrayList<>();
+		questoesDificeisCC = new ArrayList<>();
+		questoesFaceisGeral = new ArrayList<>();
+		questoesMediasGeral = new ArrayList<>();
+		questoesDificeisGeral = new ArrayList<>();
 		
-		alternativasFalsas1.add("napoleao");
-		alternativasFalsas1.add("cinco");
-		alternativasFalsas1.add("estrela");
-		alternativasFalsas1.add("estrela");
-		alternativasFalsas1.add("estrela");
-		alternativasFalsas1.add("estrela");
+		// GERAL
+		List<String> facilgeral1 = new ArrayList<>();
+		facilgeral1.add("Quanto vale 2 + 2? ");
+		facilgeral1.add("A) 5");
+		facilgeral1.add("B) 7");
+		facilgeral1.add("C) 4");
+		facilgeral1.add("D) 2");
+		facilgeral1.add("C");
+		facilgeral1.add("c");
+		questoesFaceisGeral.add(facilgeral1);
 		
-		alternativasFalsas2.add("d. pedro");
-		alternativasFalsas2.add("seis");
-		alternativasFalsas2.add("planeta");
-		alternativasFalsas2.add("planeta");
-		alternativasFalsas2.add("planeta");
-		alternativasFalsas2.add("planeta");
+		List<String> facilgeral2 = new ArrayList<>();
+		facilgeral2.add("O que esta escrito na bandeira do brasil? ");
+		facilgeral2.add("A) Ordem e Regresso");
+		facilgeral2.add("B) Ordem e retrocesso");
+		facilgeral2.add("C) Ordem e progresso");
+		facilgeral2.add("D) Progresso e ordem");
+		facilgeral2.add("C");
+		facilgeral2.add("c");
+		questoesFaceisGeral.add(facilgeral2);
 		
-		alternativasFalsas3.add("cristovao comlombo");
-		alternativasFalsas3.add("sete");
-		alternativasFalsas3.add("cometa");
-		alternativasFalsas3.add("cometa");
-		alternativasFalsas3.add("cometa");
-		alternativasFalsas3.add("cometa");
+		List<String> facilgeral3 = new ArrayList<>();
+		facilgeral3.add("Qual a tradução da palavra inglesa 'horse'?");
+		facilgeral3.add("A) Casa");
+		facilgeral3.add("B) Cavalo");
+		facilgeral3.add("C) Elefante");
+		facilgeral3.add("D) Hipopotamo");
+		facilgeral3.add("B");
+		facilgeral3.add("b");
+		questoesFaceisGeral.add(facilgeral3);
+		//
+		List<String> mediageral1 = new ArrayList<>();
+		mediageral1.add("A frase 'I have a dream' é associada a: ");
+		mediageral1.add("A) George W. Bush");
+		mediageral1.add("B) Martin Luther King");
+		mediageral1.add("C) Michael Jackson");
+		mediageral1.add("D) Snoop Dogg");
+		mediageral1.add("B");
+		mediageral1.add("b");
+		questoesMediasGeral.add(mediageral1);
 		
-		valoresDasPerguntas.add("R$ 1.000");
-		valoresDasPerguntas.add("R$ 50.000");
-		valoresDasPerguntas.add("R$ 100.000");
-		valoresDasPerguntas.add("R$ 300.000");
-		valoresDasPerguntas.add("R$ 500.000");
-		valoresDasPerguntas.add("R$ 1.000.000");
+		List<String> mediageral2 = new ArrayList<>();
+		mediageral2.add("QUal o maior e o menor país do mundo? ");
+		mediageral2.add("A) Russia e Vaticano");
+		mediageral2.add("B) China e Nepal");
+		mediageral2.add("C) Guiana Francesa e Estados Unidos");
+		mediageral2.add("D) Canadá e Bangladesh");
+		mediageral2.add("A");
+		mediageral2.add("a");
+		questoesMediasGeral.add(mediageral2);
+		
+		List<String> mediageral3 = new ArrayList<>();
+		mediageral3.add("Qual foi o primeiro recurso usado para explicar a origem das coias?");
+		mediageral3.add("A) Mitologia");
+		mediageral3.add("B) Filosofia");
+		mediageral3.add("C) Matematica");
+		mediageral3.add("D) Astronomia");
+		mediageral3.add("A");
+		mediageral3.add("a");
+		questoesMediasGeral.add(mediageral3);
+		//
+		List<String> dificilgeral1 = new ArrayList<>();
+		dificilgeral1.add("Qual a altura em metros da rede de vôlei masculino e feminino?");
+		dificilgeral1.add("A) 2,5 e 2,0");
+		dificilgeral1.add("B) 2,45 para ambos");
+		dificilgeral1.add("C) 1,8 e 1,5");
+		dificilgeral1.add("D) 2,43 e 2,24");
+		dificilgeral1.add("D");
+		dificilgeral1.add("d");
+		questoesDificeisGeral.add(dificilgeral1);
+		
+		List<String> dificilgeral2 = new ArrayList<>();
+		dificilgeral2.add("Em que periodo pre-historico o fogo foi descoberto?");
+		dificilgeral2.add("A) Neolitico");
+		dificilgeral2.add("B) Paleolitico");
+		dificilgeral2.add("C) Neolitico");
+		dificilgeral2.add("D) Idade Media");
+		dificilgeral2.add("B");
+		dificilgeral2.add("b");
+		questoesDificeisGeral.add(dificilgeral2);
+		
+		List<String> dificilgeral3 = new ArrayList<>();
+		dificilgeral3.add("Qual desses filmes foi baseado na obra de Shakespeare?");
+		dificilgeral3.add("A) Muito Barulho por Nada (2012)");
+		dificilgeral3.add("B) Capitães de Areia (2011)");
+		dificilgeral3.add("C) A Dama das Camélias (1936)");
+		dificilgeral3.add("D) Excalibur");
+		dificilgeral3.add("A");
+		dificilgeral3.add("a");
+		questoesDificeisGeral.add(dificilgeral3);
+		// COMPUTACAO
+		List<String> facilcc1 = new ArrayList<>();
+		facilcc1.add("Qual o valor em decimal do binário 00000111");
+		facilcc1.add("A) 7");
+		facilcc1.add("B) 8");
+		facilcc1.add("C) 6");
+		facilcc1.add("D) 14");
+		facilcc1.add("A");
+		facilcc1.add("a");
+		questoesFaceisCC.add(facilcc1);
+		
+		List<String> facilcc2 = new ArrayList<>();
+		facilcc2.add("Qual alternativa não contém um Hardware?");
+		facilcc2.add("A) Mouse");
+		facilcc2.add("B) Processador");
+		facilcc2.add("C) Chipset");
+		facilcc2.add("D) Debian");
+		facilcc2.add("D");
+		facilcc2.add("d");
+		questoesFaceisCC.add(facilcc2);
+		
+		List<String> facilcc3 = new ArrayList<>();
+		facilcc3.add("É o principal módulo do computador, onde estão conectados todos os periféricos");
+		facilcc3.add("A) CPU");
+		facilcc3.add("B) Placa mãe");
+		facilcc3.add("C) Gabinete");
+		facilcc3.add("D) Entrada usb");
+		facilcc3.add("B");
+		facilcc3.add("b");
+		questoesFaceisCC.add(facilcc3);
+		//
+		List<String> mediacc1 = new ArrayList<>();
+		mediacc1.add("Qual alternativa não contém um Hardware?");
+		mediacc1.add("A) Mouse");
+		mediacc1.add("B) Processador");
+		mediacc1.add("C) Chipset");
+		mediacc1.add("D) Debian");
+		mediacc1.add("D");
+		mediacc1.add("d");
+		questoesMediasCC.add(mediacc1);
+		
+		List<String> mediacc2 = new ArrayList<>();
+		mediacc2.add("Na computação, qual tecnologia substituiu a válvula?");
+		mediacc2.add("A) Capacitor");
+		mediacc2.add("B) Resistor");
+		mediacc2.add("C) Transistor");
+		mediacc2.add("D) Diodo");
+		mediacc2.add("C");
+		mediacc2.add("c");
+		questoesMediasCC.add(mediacc2);
+		
+		List<String> mediacc3 = new ArrayList<>();
+		mediacc3.add("Dizer que a classe A estende a classe B é o mesmo que dizer que:");
+		mediacc3.add("A) As classes são irmas");
+		mediacc3.add("B) A é superclasse de B");
+		mediacc3.add("C) B é filha de A");
+		mediacc3.add("D) A é filha de B");
+		mediacc3.add("D");
+		mediacc3.add("d");
+		questoesMediasCC.add(mediacc3);
+		//
+		List<String> dificilcc1 = new ArrayList<>();
+		dificilcc1.add("Na ordem cronológica, marque a alternativa correta");
+		dificilcc1.add("A) Ábaco, Eniac, Chip, Transistor e Microprocessador");
+		dificilcc1.add("B) Eniac, Ábaco, Chip, Transistor e Microprocessador");
+		dificilcc1.add("C) Ábaco, Eniac, Transistor, Chip e Microprocessador.");
+		dificilcc1.add("D) Ábaco, Eniac, Chip, Microprocessador e Transistor");
+		dificilcc1.add("C");
+		dificilcc1.add("c");
+		questoesDificeisCC.add(dificilcc1);
+		
+		List<String> dificilcc2 = new ArrayList<>();
+		dificilcc2.add("Em ordem cronológica, marque a alternativa correta");
+		dificilcc2.add("A) Ábaco, Eniac, Chip, Transistor e Microprocessador");
+		dificilcc2.add("B) Eniac, Ábaco, Chip, Transistor e Microprocessador");
+		dificilcc2.add("C) Ábaco, Eniac, Transistor, Chip e Microprocessador.");
+		dificilcc2.add("D) Ábaco, Eniac, Chip, Microprocessador e Transistor");
+		dificilcc2.add("C");
+		dificilcc2.add("c");
+		questoesDificeisCC.add(dificilcc2);
+		
+		List<String> dificilcc3 = new ArrayList<>();
+		dificilcc3.add("Pela ordem cronológica, marque a alternativa correta");
+		dificilcc3.add("A) Ábaco, Eniac, Chip, Transistor e Microprocessador");
+		dificilcc3.add("B) Eniac, Ábaco, Chip, Transistor e Microprocessador");
+		dificilcc3.add("C) Ábaco, Eniac, Transistor, Chip e Microprocessador.");
+		dificilcc3.add("D) Ábaco, Eniac, Chip, Microprocessador e Transistor");
+		dificilcc3.add("C");
+		dificilcc3.add("c");
+		questoesDificeisCC.add(dificilcc3);
 	}
-	
-	
 	
 	//recebe a resposta da alternativa e verifica se a letra eh valida
-	public static void recebeResposta() {
+	public static void recebeRespostaDaQuestao() {
+		boolean respostaInvalida;
 		do {
 			resposta = ler.next();	
 			System.out.println("");
@@ -142,129 +315,117 @@ public class Showdomilhao{
 	}
 	
 	
-	//sorteia uma pergunta aleatoria
+	/**
+	 * sorteia uma pergunta aleatoria
+	 * @return indice da pergunta sorteada
+	 */
 	public static void sorteiaPergunta() {
-		
-		int qtdPerguntas = perguntas.size();
-		
+		//int indiceDaPerguntaSorteada;
 		Random rand = new Random();
-        int numeroPergunta = rand.nextInt(qtdPerguntas);
-        if(!jaEscolhidas.contains(numeroPergunta)) {//se nao foi escolhida entao adiciona na lista de jaEscolhidas
-        	jaEscolhidas.add(numeroPergunta);
-        }else {// se ja foi escolhida procura outra aleatoriamente ate achar uma que nao foi e adiciona na lista de jaEscolhidas
-        	while(jaEscolhidas.contains(numeroPergunta)) {
-        		numeroPergunta = rand.nextInt(qtdPerguntas);
-        	}
-        	jaEscolhidas.add(numeroPergunta);
-        }
-        indicePerguntaSorteada = numeroPergunta;
+		if(numeroDaRodadaAtual <= 2) {//nivel facil
+			indiceDaPerguntaSorteada = rand.nextInt(faceisAux.size());
+		}else if(numeroDaRodadaAtual >= 3 && numeroDaRodadaAtual <= 4) {//nivel medio
+			indiceDaPerguntaSorteada = rand.nextInt(mediasAux.size());	
+		}else {//nivel dificil	
+			indiceDaPerguntaSorteada = rand.nextInt(dificeisAux.size());
+		}
+		//return indiceDaPerguntaSorteada;
 	}
-	
 	
 	//exibe a pergunta com as alternativas
 	//a letra da resposta correta é escolhida de forma aleatoria
-	public static void exibeAlternativas() {
+	public static void imprimePergunta() {
 		System.out.println("----------------------------------------------------------------\n");
-		System.out.println("Prepare-se para a pergunta que vale " + valoresDasPerguntas.get(indiceDosValoresDasPerguntas) + "\n");
-		System.out.println(perguntas.get(indicePerguntaSorteada));
-		Random rand = new Random();
-        int posicao = rand.nextInt(4);
-        switch (posicao) {
-		case 0:
-			a = respostas.get(indicePerguntaSorteada);
-			b = alternativasFalsas1.get(indicePerguntaSorteada);
-			c = alternativasFalsas2.get(indicePerguntaSorteada);
-			d = alternativasFalsas3.get(indicePerguntaSorteada);			
-			break;
-		case 1:
-			a = alternativasFalsas1.get(indicePerguntaSorteada);
-			b = respostas.get(indicePerguntaSorteada);
-			c = alternativasFalsas2.get(indicePerguntaSorteada);
-			d = alternativasFalsas3.get(indicePerguntaSorteada);
-			break;
-		case 2:
-			a = alternativasFalsas1.get(indicePerguntaSorteada);
-			b = alternativasFalsas2.get(indicePerguntaSorteada);
-			c = respostas.get(indicePerguntaSorteada);
-			d = alternativasFalsas3.get(indicePerguntaSorteada);
-			break;
-		case 3:
-			a = alternativasFalsas1.get(indicePerguntaSorteada);
-			b = alternativasFalsas2.get(indicePerguntaSorteada);
-			c = alternativasFalsas3.get(indicePerguntaSorteada);
-			d = respostas.get(indicePerguntaSorteada);
-			break;
-		default:
-			break;
+		System.out.println("Prepare-se para a pergunta que vale " + premios.get(numeroDaRodadaAtual-1) + "\n");
+		
+		if(numeroDaRodadaAtual <= 2) {
+			for (int i = 0; i < 5; i++) {
+				System.out.println(faceisAux.get(indiceDaPerguntaSorteada).get(i));
+			}
+		}else if(numeroDaRodadaAtual >= 3 && numeroDaRodadaAtual <= 4) {
+			for (int i = 0; i < 5; i++) {
+				System.out.println(mediasAux.get(indiceDaPerguntaSorteada).get(i));	
+			}
+		}else {	
+			for (int i = 0; i < 5; i++) {
+				System.out.println(dificeisAux.get(indiceDaPerguntaSorteada).get(i));
+			}
 		}
-        System.out.println("a) "+ a);
-        System.out.println("b) "+ b);
-        System.out.println("c) "+ c);
-        System.out.println("d) "+ d + "\n");
         System.out.print("Resposta: ");
 	}
 	
 	
 	//verifica se a resposta esta correta
-	//resposta correta o continuar eh true, logo, o jogo continua
-	public static boolean analisaResposta(String resposta) {
-		boolean continuar = true;
-		switch (resposta) {
-		case "a":
-			if(a == respostas.get(indicePerguntaSorteada))
-				continuar = true;
-			else
-				continuar = false;
-			break;
-		case "b":
-			if(b == respostas.get(indicePerguntaSorteada) )
-				continuar = true;
-			else
-				continuar = false;
-			break;
-		case "c":
-			if(c == respostas.get(indicePerguntaSorteada))
-				continuar = true;
-			else
-				continuar = false;
-			break;
-		case "d":
-			if(d == respostas.get(indicePerguntaSorteada))
-				continuar = true;
-			else
-				continuar = false;
-			break;
-		default:
-			break;
-		}
+	public static boolean alternativaCorreta() {
+		boolean retorno;
 		
-		if(continuar == false) { //se errou a pergunta
-			System.out.println("Que pena, você errou.");
-			System.out.println("A resposta certa era: " + respostas.get(indicePerguntaSorteada));
-			
-			if(indiceDosValoresDasPerguntas != 0) {//se errou a primeira pergunta então nao ganha nada, logo nao entra aqui
-				System.out.println("Você leva para casa " + valoresDasPerguntas.get(indiceDosValoresDasPerguntas-1) + "\n");//se errar ganha o valor da pergunta anterior
-			}
-			System.out.print("Deseja continuar jogando? s/n ");//a resposta eh lida no main
-			indiceDosValoresDasPerguntas = 0;
-			jaEscolhidas = new ArrayList<>(); 
-			valorAcumulado = "";
-			
-		}else{ //se acertou a pergunta
-			System.out.println("Parabéns! você ganhou " + valoresDasPerguntas.get(indiceDosValoresDasPerguntas) + "\n");
-			valorAcumulado = valoresDasPerguntas.get(indiceDosValoresDasPerguntas);
-			indiceDosValoresDasPerguntas += 1;
-			
-			if(valorAcumulado.equals("1.000.000")){
+		if(numeroDaRodadaAtual <= 2) {
+			letraRespostaCertaAtual = faceisAux.get(indiceDaPerguntaSorteada).get(5);
+			retorno = faceisAux.get(indiceDaPerguntaSorteada).get(5).compareTo(resposta) == 0 ||
+					faceisAux.get(indiceDaPerguntaSorteada).get(6).compareTo(resposta) == 0;
+			faceisAux.remove(indiceDaPerguntaSorteada);
+		
+		}else if(numeroDaRodadaAtual >= 3 && numeroDaRodadaAtual <= 4) {
+			letraRespostaCertaAtual = mediasAux.get(indiceDaPerguntaSorteada).get(5);
+			retorno = mediasAux.get(indiceDaPerguntaSorteada).get(5).compareTo(resposta) == 0 ||
+					mediasAux.get(indiceDaPerguntaSorteada).get(6).compareTo(resposta) == 0;
+			mediasAux.remove(indiceDaPerguntaSorteada);
+		}else {	
+			letraRespostaCertaAtual = dificeisAux.get(indiceDaPerguntaSorteada).get(5);
+			retorno = dificeisAux.get(indiceDaPerguntaSorteada).get(5).compareTo(resposta) == 0 ||
+					dificeisAux.get(indiceDaPerguntaSorteada).get(6).compareTo(resposta) == 0;
+			dificeisAux.remove(indiceDaPerguntaSorteada);
+		}
+		return retorno;
+	}
+	
+	public static void imprimeResultado() {
+		
+		if(alternativaCorreta()) {
+			System.out.println("Parabéns! você ganhou " + premios.get(numeroDaRodadaAtual-1) + "\n");
+			//valorAcumulado
+			if(premios.size() == (numeroDaRodadaAtual)) {// eh pq respondeu a ultima rodada
 				System.out.println("Agora você é o mais novo milionário do Brasil!\n");
-				System.out.print("Deseja continuar jogando? s/n "); //a resposta eh lida no main
-				indiceDosValoresDasPerguntas = 0;
-				jaEscolhidas = new ArrayList<>(); 
+				numeroDaRodadaAtual = 1;
+				continuar();
 			}else {
+				numeroDaRodadaAtual++;
 				System.out.println("Próxima pergunta...\n");
 			}
+		}else {//alternativa incorreta
+			System.out.println("Que pena, você errou.");
+			System.out.println("A resposta certa era: " + letraRespostaCertaAtual);
+			if(numeroDaRodadaAtual != 1) {
+				System.out.println("Você leva pra casa " + premios.get(numeroDaRodadaAtual-2));
+			}
+			numeroDaRodadaAtual = 1;
+			continuar();
 		}
-		return continuar;
+		
+	}
+	
+	public static void continuar() {
+		boolean respostaInvalida;
+		System.out.print("Deseja continuar jogando? s/n ");
+		do {
+			resposta = ler.next();
+			
+			if(resposta.equals("n")) {
+				continuar = false;
+				respostaInvalida = false;
+			}else if(resposta.equals("s")) {
+				continuar = true;
+				respostaInvalida = false;
+			}else {
+				respostaInvalida = true;
+				System.out.print("Resposta inválida. Digite s ou n: ");
+			}
+		} while (respostaInvalida);
+		
+		if (continuar) {
+			preencherQuestoes();
+			escolheCategoria();
+		}
 	}
 	
 	
